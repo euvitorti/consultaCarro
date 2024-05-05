@@ -1,13 +1,17 @@
 package br.com.alura.FipeTable.main;
 
+import br.com.alura.FipeTable.model.Auto;
 import br.com.alura.FipeTable.model.AutoModels;
 import br.com.alura.FipeTable.model.Data;
 import br.com.alura.FipeTable.service.Api;
 import br.com.alura.FipeTable.service.ConvertData;
 import org.apache.logging.log4j.util.PropertySource;
 
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Scanner;
+import java.util.stream.Collectors;
 
 public class Main {
     private Api api = new Api();
@@ -32,6 +36,7 @@ public class Main {
 
         String address;
 
+        //Verificação da escolha do usuário
         if (choice.toLowerCase().contains("carr")) {
             address = BASE_URL + "carros/marcas";
         } else if (choice.toLowerCase().contains("mot")) {
@@ -51,6 +56,7 @@ public class Main {
                 .sorted(Comparator.comparing(Data::codigo))
                 .forEach(System.out::println);
 
+        //LISTANDO POR MARCA
         System.out.println("""
                 ----------------
                 Informe o código:
@@ -75,5 +81,49 @@ public class Main {
         list.modelos().stream()
                 .sorted(Comparator.comparing(Data::codigo))
                 .forEach(System.out::println);
+
+        //FILTRANDO POR MODELO ESPECIFÍCO DA MARCA DESEJADA
+        System.out.println("Digite o modelo do carro: ");
+        String autoModel = scanner.nextLine();
+
+        //ADICIONA OS MODELOS Á UMA LISTA
+        List<Data> filterModel = list.modelos().stream()
+                .filter(m -> m.nome().toLowerCase().contains(autoModel.toLowerCase()))
+                .collect(Collectors.toList());
+
+        System.out.println("""
+                -----------------
+                Modelos filtrados
+                -----------------
+                \n
+                """);
+        filterModel.forEach(System.out::println);
+
+        System.out.println("Digite por favor o código do modelo: ");
+        code = scanner.nextLine();
+
+        // URL ATUALIZADA
+        address += "/" + code + "/anos";
+
+        json = api.connect(address);
+
+        List<Data> years = convertData.getList(json, Data.class);
+        List<Auto> autoList = new ArrayList<>();
+
+        for (int i = 0; i < years.size(); i ++) {
+            String yearsAddress = address + "/" + years.get(i).codigo();
+            json = api.connect(yearsAddress);
+
+            Auto auto = convertData.getData(json, Auto.class);
+            autoList.add(auto);
+        }
+
+        System.out.println("""
+                --------
+                Veículos
+                --------
+                """);
+
+        autoList.forEach(System.out::println);
     }
 }
